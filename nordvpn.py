@@ -4,6 +4,7 @@ from tkinter import *
 from tkinter.filedialog import *
 from tkinter.messagebox import *
 import os
+import subprocess
 
 
 class GUI:
@@ -44,10 +45,11 @@ class GUI:
 
 class CLI:
     def login(self, username, password):
-        login = os.popen('nordvpn login', 'w')
-        login.write('%s\n' % username)
-        login.write('%s\n' % password)
-        return login.read()
+        process = subprocess.Popen(["nordvpn", "login"], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        input = str("%s\n%s\n" % (username, password)).encode('utf-8')
+        process.stdin.write(input)
+        print(process.communicate()[0])
+        process.stdin.close()
 
     def connect(self, country_code='', server_num=''):
         return os.popen('nordvpn connect %s%s' % (country_code, server_num)).read()
@@ -103,14 +105,16 @@ class CLI:
             self.settings.update({key: value})
 
     def getStatus(self):
-        self.status = os.popen('nordvpn status').read()[len('Status: '):]
+        status = os.popen('nordvpn status').read()
+        self.status = self.formatReturn(status)
 
     def getCountries(self):
         countries = os.popen('nordvpn countries').read()
         self.countries = self.formatReturn(countries)
 
     def getCities(self, country):
-        self.cities = os.popen('nordvpn cities %s' % country).read()
+        cities = os.popen('nordvpn cities %s' % country).read()
+        self.cities = self.formatReturn(cities)
 
     def getGroups(self):
         groups = os.popen('nordvpn groups').read()
@@ -138,4 +142,4 @@ class CLI:
 
 
 if __name__ == "__main__":
-    GUI()
+    CLI()
