@@ -45,17 +45,41 @@ class GUI:
 
 class CLI:
     def login(self, username, password):
-        process = subprocess.Popen(["nordvpn", "login"], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        process = subprocess.Popen(
+            ["nordvpn", "login"], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         input = str("%s\n%s\n" % (username, password)).encode('utf-8')
         process.stdin.write(input)
         print(process.communicate()[0])
         process.stdin.close()
 
-    def connect(self, country_code='', server_num=''):
-        return os.popen('nordvpn connect %s%s' % (country_code, server_num)).read()
+    def connect(self, country='', server_num='', double_vpn=False, p2p=False, region='', dedicated=False):
+        # example us8704
+        manual_server = country_code != '' and server_num != ''
+        if (manual_server):
+            country_code = '%s%s' % (country, server_num)
+        #
+        if (double_vpn):
+            if(manual_server):
+                prefix = '--group double_vpn '
+            else:
+                prefix = 'double_vpn'
+        #
+        if(not manual_server and not double_vpn):
+            if(p2p):
+                prefix = 'P2P'
+            elif(dedicated):
+                prefix = 'P2P'
+            elif(region != ''):
+                prefix = region
+
+
+        return os.popen('nordvpn connect %s%s%s' % (prefix, country_code, server_num)).read()
 
     def disconnect(self):
         return os.popen('nordvpn disconnect').read()
+
+    def threatprotectionlite(self, state=False):
+        return os.popen('nordvpn set threatprotectionlite %s' % 'on' if state else 'off').read()
 
     def cybersec(self, state=False):
         return os.popen('nordvpn set cybersec %s' % 'on' if state else 'off').read()
@@ -72,19 +96,19 @@ class CLI:
     def customDNS(self, ip1='1.1.1.1', ip2='1.0.0.1'):
         return os.popen('nordvpn set dns').read()
 
-    def protocol(self, packet_type):
+    def protocol(self, packet_type): # UDP or TCP, pref UDP
         return os.popen('nordvpn set protocol %s' % packet_type).read()
 
     def obfuscate(self, state=False):
         return os.popen('nordvpn set obfuscate %s' % 'on' if state else 'off').read()
 
-    def connectionType(self, **args):
+    def connectionType(self, **args): # OpenVPN or NordLynx
         return os.popen('nordvpn set technology %s' % args).read()
 
     def whitelist(self, command, option, value):
         # command = add, remove
         # option = port, subnet
-        # value = integer, IP_Address
+        # value = integer (port), IP_Address (CIDR)
         return os.popen('nordvpn whitelist %s %s %s' % (command, option, value)).read()
 
     def accountINFO(self):
@@ -135,9 +159,9 @@ class CLI:
         strings = string.split(',')
         formatted = []
         for element in strings:
-            if(element != None and element.strip() != ''):
+            if (element != None and element.strip() != ''):
                 formatted.append(element)
-        
+
         return formatted
 
 
